@@ -2,6 +2,8 @@
 
 This is a simple Streamlit app that provides stock recommendation based on a given company and strategy. The recommendation is generated using the provided Python file that utilizes OpenAI's language model and other tools.
 
+The application was mainly used so I could get started with LangChain, and learn how this library works. 
+
 ## Features
 
 - Allows users to input a company name and a strategy.
