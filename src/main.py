@@ -9,18 +9,21 @@ from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from langchain.chains import LLMChain
 import streamlit as st
 import matplotlib.pyplot as plt
+from langchain.tools import DuckDuckGoSearchRun
+import os
+
 
 
 dotenv.load_dotenv()
 
-llm = OpenAI(temperature=0.7)
 
 def run(
     company: str,
     strategy: str,
 ): 
-    search_results = search(company, create_search_agent())
-    
+    llm = OpenAI(temperature=0.7, max_tokens=256*5, api_key=os.getenv("OPENAI_API_KEY"))
+    search_results = search(company, create_search_agent(llm=llm))
+
     template = """
 Given the following information about {company}, formulate a buy/sell/hold recommendation for the stock. Add your reasoning for the recommendation. 
 You're allowed to formulate another strategy if you think it's more appropriate.
@@ -87,7 +90,7 @@ You're allowed to formulate another strategy if you think it's more appropriate.
     return result
 
 
-def create_search_agent():
+def create_search_agent(llm):
     class SearchTool(BaseTool):
         name = "Google Search"
         description = "Search Google for recent results. Input is a string."
@@ -100,7 +103,7 @@ def create_search_agent():
             raise NotImplementedError
 
 
-    tools = [SearchTool()]
+    tools = [SearchTool(), DuckDuckGoSearchRun()]
 
     prompt = hub.pull("hwchase17/react")
 
@@ -145,8 +148,8 @@ def main():
     st.title("Stock Recommendation App")
 
     # Sidebar inputs
-    company = st.sidebar.text_input("Company", "Apple")
-    strategy = st.sidebar.text_area("Strategy", "Invest for the long term.")
+    company = st.sidebar.text_input("Company", placeholder="The company you want advice on.")
+    strategy = st.sidebar.text_area("Strategy", placeholder="The strategy you want to use. What do you want to achieve by buying/selling/holding the stock? How long do you want to hold the stock? What is your risk tolerance? What is your target return?")
 
     if st.sidebar.button("Run"):
         st.write("Running recommendation for:", company)
@@ -164,6 +167,9 @@ def main():
 
         st.subheader("Alternate Strategy:")
         st.write(output["Alternate Strategy"])
+
+        st.subheader("Excel Sheet:")
+        st.write("If you make this trade, add it to the excel sheet so we can track the performance of the recommendation. https://docs.google.com/spreadsheets/d/15Fia7BHSUtZrRA-Yp5AHNzKr7BZBmVjMGPLAfFPIXN0/edit?usp=sharing")
 
 if __name__ == "__main__":
     main()
